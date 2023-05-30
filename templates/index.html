@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Road Prediction App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- predictions style -->
+</head>
+
+<body>
+    <h1>Road Prediction App</h1>
+    <form action="{{ url_for('predict') }}" method="POST">
+        <div class='form'>
+            <label for="section_name">Section Name:</label>
+            <select name="section_name" id="section_name">
+                {% for section_name in section_names %}
+                <option value="{{ section_name }}">{{ section_name }}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+            <label for="start_year">Start Year:</label>
+            <input type="number" name="start_year" id="start_year" min="2022" max="2050" required>
+            <br><br>
+            <label for="end_year">End Year:</label>
+            <input type="number" name="end_year" id="end_year" min="2022" max="2050" required>
+            <br><br>
+        </div>
+        <div class="input">
+            <input type="submit" value="Predict">
+        </div>
+    </form>
+
+    <!-- predictions code -->
+    {% if predictions %}
+    <div class="prediction">
+        <h1 class="prediction-heading">Predictions DataTable</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Section Name</th>
+                    <th>Year</th>
+                    <th>IRI (m/km)</th>
+                    <th>Cracking Area (%)</th>
+                    <th>Potholes (no.km)</th>
+                    <th>Rut Depth (mm)</th>
+                    <th>Alternative</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in predictions %}
+                <tr>
+                    <td>{{ prediction['Section Name'] }}</td>
+                    <td>{{ prediction['Year'] }}</td>
+                    <td>{{ '{:.2f}'.format(prediction['IRI (m/km)']) }}</td>
+                    <td>{{ '{:.2f}'.format(prediction['Cracking Area (%)']) }}</td>
+                    <td>{{ '{:.0f}'.format(prediction['Potholes (no.km)']) }}</td>
+                    <td>{{ '{:.2f}'.format(prediction['Rut Depth (mm)']) }}</td>
+                    <td>{{ prediction['Alternative'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="download-wrapper">
+        <p>Download the predictions as an Excel file:</p>
+        <a href="/download">Download Predictions</a>
+    </div>
+    
+
+    <!-- <style>
+        .chart-container {
+            margin-bottom: 20px; /* Add margin-bottom between each chart */
+        }
+    </style> -->
+    <div class="chart-container" id="combined-chart"></div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        if ('{{ data }}' !== '{}') {
+            var data = JSON.parse('{{ data | tojson | safe }}');
+            var section = data['section_name'];
+    
+            var metrics = ['IRI (m/km)', 'Cracking Area (%)', 'Potholes (no.km)', 'Rut Depth (mm)'];
+            var metrics_value = ['y_iri', 'y_crackingarea', 'y_potholes', 'y_rutdepth'];
+            var lineColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'];
+            var barColors = ['#ff7f0e', '#1f77b4', '#d62728', '#2ca02c'];
+            var barWidth = 0.35;
+    
+            for (var i = 0; i < metrics.length; i++) {
+                var scatter = {
+                    x: data['x'],
+                    y: data[metrics_value[i]],
+                    mode: 'lines+markers',
+                    name: metrics[i],
+                    marker: {
+                        color: lineColors[i]
+                    }
+                };
+    
+                var bar = {
+                    x: data['x'],
+                    y: data[metrics_value[i]],
+                    type: 'bar',
+                    name: metrics[i],
+                    marker: {
+                        color: barColors[i]
+                    },
+                    width: barWidth
+                };
+    
+                var layout = {
+                    title: {
+                        text: 'Road Prediction for ' + metrics[i] + ' - Section ' + section,
+                        font: {
+                            family: 'Arial, sans-serif',
+                            size: 18,
+                            color: 'black',
+                            weight: 'bold'
+                        }
+                    },
+                    xaxis: {
+                        title: 'Year',
+                    },
+                    yaxis: {
+                        title: metrics[i],
+                    },
+                    showlegend: false,
+                    margin: {
+                        t: 30,
+                        b: 50,
+                        l: 50,
+                        r: 20
+                    }
+                };
+    
+                var config = { responsive: true };
+                var chartContainer = document.createElement('div');
+                chartContainer.className = 'chart-container';
+                chartContainer.id = 'combined-chart-' + i;
+                document.getElementById('combined-chart').appendChild(chartContainer);
+                Plotly.newPlot('combined-chart-' + i, [scatter, bar], layout, config);
+            }
+        }
+    </script>
+    <div class="chart-container" id="combined2-chart"></div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        if ('{{ data }}' !== '{}') {
+            var data = JSON.parse('{{ data | tojson | safe }}');
+            var section = data['section_name'];
+
+            var metrics = ['IRI (m/km)', 'Cracking Area (%)', 'Potholes (no.km)', 'Rut Depth (mm)'];
+            var metrics_value = ['y_iri', 'y_crackingarea', 'y_potholes', 'y_rutdepth'];
+            var lineColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'];
+            var barColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'];
+            var barWidth = 0.4;
+
+            var combinedData = [];
+
+            for (var i = 0; i < metrics.length; i++) {
+                var scatter = {
+                    x: data['x'],
+                    y: data[metrics_value[i]],
+                    mode: 'lines+markers',
+                    name: metrics[i],
+                    marker: {
+                        color: lineColors[i]
+                    }
+                };
+
+                var bar = {
+                    x: data['x'],
+                    y: data[metrics_value[i]],
+                    type: 'bar',
+                    name: metrics[i],
+                    marker: {
+                        color: barColors[i]
+                    },
+                    width: barWidth
+                };
+
+                combinedData.push(scatter, bar);
+            }
+
+            var layout = {
+                title: {
+                    text: 'Combined Metrics Chart - Section ' + section + '.',
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 18,
+                        color: 'black',
+                        weight: 'bold'
+                    }
+                },
+                xaxis: {
+                    title: 'Year',
+                },
+                showlegend: true,
+                margin: {
+                    t: 30,
+                    b: 50,
+                    l: 50,
+                    r: 20
+                }
+            };
+
+            var config = { responsive: true };
+            var chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.id = 'combined2-chart';
+            document.getElementById('combined2-chart').appendChild(chartContainer);
+            Plotly.newPlot('combined2-chart', combinedData, layout, config);
+        }
+    </script>
+       
+    
+    {% endif %}
+</body>
+</html>
